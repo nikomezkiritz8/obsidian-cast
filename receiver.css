@@ -1,0 +1,141 @@
+/* OBSIDIAN · receptor Cast "B · Cine" (1920×1080). Solo se animan transform y opacity. */
+:root {
+  --gold: #E8C46E; --goldg: #D4C096; --bg: #060509;
+  --ease: cubic-bezier(.22,.8,.24,1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: #fff;
+  font-family: 'Roboto', 'Inter', 'Google Sans', 'Noto Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+#media { display: none; }
+#stage { position: absolute; inset: 0; overflow: hidden; }
+
+/* aurora: pintada una vez por canción en un lienzo pequeño (suave al escalar); deriva lenta solo con transform */
+#aurora { position: absolute; left: -60px; top: -40px; width: 2040px; height: 1160px; opacity: 1; transition: opacity 1.2s;
+  animation: drift 26s ease-in-out infinite alternate; will-change: transform; }
+@keyframes drift { from { transform: translate3d(-30px, 10px, 0) } to { transform: translate3d(30px, -12px, 0) } }
+body.paused #aurora { opacity: .7; animation-play-state: paused; }
+
+#floor { position: absolute; left: 0; right: 0; top: 700px; bottom: 0;
+  background: linear-gradient(to bottom, rgba(8,7,11,0) 0, rgba(8,7,11,.85) 90px, rgba(8,7,11,.85) 100%); }
+#floor .hair { position: absolute; left: 60px; width: 800px; top: 0; height: 1.4px;
+  background: linear-gradient(90deg, rgba(232,196,110,0), rgba(232,196,110,.6) 50%, rgba(232,196,110,0)); }
+
+/* ── carátula flotante ─────────────────────────────────────────────── */
+#coverWrap { position: absolute; left: 165px; top: 170px; width: 470px; height: 470px; --s: 470px; --hz: 530px; }
+.tilt { transform: perspective(1500px) rotateY(8deg); transform-origin: 0 50%; }
+#cover { position: absolute; inset: 0; border-radius: 18px; overflow: hidden; background: #0D0B12;
+  box-shadow: 0 26px 60px rgba(0,0,0,.72); }
+#coverImg, #reflImg { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .5s; }
+#coverImg.ok, #reflImg.ok { opacity: 1; }
+#initials { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  font-family: 'Roboto Serif', Georgia, serif; font-size: calc(var(--s) * .26); color: rgba(255,255,255,.55); }
+body.noimg #initials { display: flex; }
+#cover .edge { position: absolute; inset: 0; border-radius: 18px; pointer-events: none;
+  border: 1.4px solid transparent;
+  background: linear-gradient(115deg, rgba(232,196,110,.75), rgba(232,196,110,.18) 35%, rgba(232,196,110,0) 55%) border-box;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+#dim { position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity .6s; }
+body.paused #dim { opacity: .4; }
+
+#glow { position: absolute; left: 50%; top: 50%; width: calc(var(--s) * 1.55); height: calc(var(--s) * 1.55);
+  transform: translate(-50%, -50%); opacity: .95; border-radius: 50%;
+  -webkit-mask: radial-gradient(closest-side, #000 40%, transparent 100%); mask: radial-gradient(closest-side, #000 40%, transparent 100%);
+  animation: breathe 4.5s ease-in-out infinite; will-change: opacity; transition: opacity 1s; }
+@keyframes breathe { 0%, 100% { opacity: .78 } 50% { opacity: 1 } }
+body.paused #glow { animation: none; opacity: .45; }
+
+#reflection { position: absolute; left: 0; width: var(--s); top: calc(2 * var(--hz) - var(--s)); height: calc(var(--s) * .36); overflow: hidden; pointer-events: none;
+  -webkit-mask: linear-gradient(to bottom, rgba(0,0,0,.95), rgba(0,0,0,.35) 45%, transparent 100%); mask: linear-gradient(to bottom, rgba(0,0,0,.95), rgba(0,0,0,.35) 45%, transparent 100%); opacity: .38; }
+#reflection .tilt { width: var(--s); height: var(--s); border-radius: 18px; overflow: hidden; transform: perspective(1500px) rotateY(8deg) scaleY(-1); }
+body.paused #reflection { opacity: .22; }
+#contact { position: absolute; top: calc(var(--hz) - 9px); left: 10%; width: 80%; height: 18px; border-radius: 50%; background: rgba(0,0,0,.55); filter: blur(8px); }
+
+#paused { position: absolute; left: 50%; top: 50%; width: 220px; height: 68px; margin: -34px 0 0 -110px; border-radius: 34px;
+  display: flex; align-items: center; justify-content: center; gap: 0; opacity: 0; transform: scale(.94); transition: opacity .35s, transform .35s var(--ease);
+  background: rgba(10,10,14,.6); border: 1.4px solid rgba(232,196,110,.85); box-shadow: 0 8px 26px rgba(0,0,0,.45); }
+#paused i { display: block; width: 8px; height: 26px; border-radius: 2px; background: rgba(255,255,255,.95); margin-right: 8px; }
+#paused span { font-size: 26px; font-weight: 600; margin-left: 10px; color: rgba(255,255,255,.95); }
+body.paused #paused { opacity: 1; transform: scale(1); }
+
+/* ── textos ────────────────────────────────────────────────────────── */
+#top { position: absolute; left: 70px; top: 50px; right: 70px; height: 26px; }
+.brand { color: rgba(232,196,110,.8); font-size: 20px; font-weight: 600; letter-spacing: 7px; }
+#album { position: absolute; left: 330px; width: 0; display: flex; justify-content: center; white-space: nowrap; top: 0;
+  font-size: 20px; font-weight: 600; letter-spacing: 6px; color: rgba(255,255,255,.78); text-transform: uppercase; }
+#album::before { content: attr(data-t); }
+
+#info { position: absolute; left: 165px; top: 780px; width: 470px; }
+#eyebrow { display: none; }
+#titleRow { display: flex; align-items: center; gap: 16px; height: 64px; }
+#title { font-size: 52px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.3px; }
+#explicit { display: none; flex: none; width: 38px; height: 38px; border-radius: 8px; background: rgba(235,235,240,.92); color: #141218;
+  font-size: 26px; font-weight: 800; align-items: center; justify-content: center; line-height: 1; }
+body.explicit #explicit { display: inline-flex; }
+#artistRow { display: flex; align-items: center; justify-content: space-between; height: 46px; margin-top: 0; }
+#artist { font-size: 30px; font-weight: 500; color: var(--goldg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+#pill { flex: none; display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 20px; margin-left: 14px;
+  border: 1.6px solid transparent; font-size: 16.5px;
+  background: linear-gradient(rgba(14,12,18,.82), rgba(14,12,18,.82)) padding-box,
+              linear-gradient(120deg, #B8893A, #F6E3A6 30%, #D6A84A 55%, #FBEFC4 75%, #C0923F) border-box;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+#pill b { font-weight: 800; letter-spacing: .5px; background: linear-gradient(120deg, #C9A04F, #FBEFC4 45%, #D9AE55 75%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#pill .sep { width: 1.2px; height: 20px; background: rgba(255,255,255,.28); margin: 0 9px; }
+#pillDetail { font-weight: 600; color: rgba(255,255,255,.94); }
+#pill.cd { background: linear-gradient(rgba(22,20,26,.72), rgba(22,20,26,.72)) padding-box, linear-gradient(120deg, #6E737C, #F3F5F8 30%, #9BA1AA 55%, #FFFFFF 75%, #7A8089) border-box; }
+#pill.cd b { background: linear-gradient(120deg, #AEB4BD, #FFFFFF 45%, #C3C8CF 75%); -webkit-background-clip: text; background-clip: text; }
+#pill.none { display: none; }
+
+#progress { margin-top: 48px; }
+#progress .track { position: relative; height: 11px; border-radius: 6px; background: rgba(255,255,255,.24); overflow: hidden; }
+#bar { position: absolute; inset: 0; background: #fff; border-radius: 6px; transform-origin: 0 50%; transform: scaleX(0);
+  box-shadow: 0 0 14px rgba(255,255,255,.45); transition: transform .26s linear; }
+body.instant #bar, body.instant #lines, body.instant .line { transition: none; }
+#progress .times { display: flex; justify-content: space-between; margin-top: 17px; font-size: 20px; font-weight: 500; color: rgba(212,192,150,.9); font-variant-numeric: tabular-nums; }
+
+/* ── letra sincronizada (estilo Apple Music TV) ─────────────────────── */
+#lyrics { position: absolute; left: 900px; right: 70px; top: 0; bottom: 0; overflow: hidden;
+  -webkit-mask: linear-gradient(to bottom, transparent 120px, #000 220px, #000 860px, transparent 1000px); mask: linear-gradient(to bottom, transparent 120px, #000 220px, #000 860px, transparent 1000px); }
+#lines { position: absolute; left: 0; right: 0; top: 0; transition: transform .7s var(--ease); will-change: transform; }
+.line { position: absolute; left: 0; right: 0; font-size: 68px; font-weight: 800; line-height: 1.12; letter-spacing: -.4px;
+  color: rgb(200,200,210); opacity: .30; transform: scale(.8); transform-origin: 0 50%;
+  transition: opacity .7s var(--ease), transform .7s var(--ease); }
+.line.past { opacity: .17; }
+.line.far { opacity: 0; }
+.line.cur { color: #fff; opacity: 1; transform: scale(1); text-shadow: 0 0 22px rgba(255,255,255,.35); }
+body.paused #lyrics { opacity: .55; }
+#lyrics { transition: opacity .6s; }
+
+#chip { position: absolute; right: 70px; top: 995px; height: 42px; padding: 0 20px 0 16px; border-radius: 21px; display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18); font-size: 17px; font-weight: 500; color: rgba(255,255,255,.75);
+  transition: opacity .5s; }
+#chip svg { width: 22px; height: 22px; fill: none; stroke: var(--gold); stroke-width: 1.8; stroke-linecap: round; }
+body.paused #chip, body.nochip #chip { opacity: 0; }
+
+/* ── A · sin letra: carátula grande + datos a la derecha ────────────── */
+body.nolyrics #lyrics { display: none; }
+body.nolyrics #coverWrap { left: 170px; top: 170px; width: 600px; height: 600px; --s: 600px; --hz: 650px; }
+body.nolyrics #floor { top: 820px; }
+body.nolyrics #floor .hair { width: 1800px; }
+body.nolyrics #album { left: 890px; }
+body.nolyrics #info { left: 900px; top: 278px; width: 890px; }
+body.nolyrics #eyebrow { display: block; font-size: 20px; font-weight: 650; letter-spacing: 6px; color: rgba(232,196,110,.9); height: 44px; }
+body.nolyrics #titleRow { height: 120px; gap: 22px; }
+body.nolyrics #title { font-size: 104px; letter-spacing: -1px; }
+body.nolyrics #explicit { width: 64px; height: 64px; font-size: 44px; border-radius: 12px; }
+body.nolyrics #artistRow { display: block; height: auto; }
+body.nolyrics #artist { display: block; font-size: 48px; margin-top: 6px; }
+body.nolyrics #pill { margin: 50px 0 0 0; height: 56px; border-radius: 28px; padding: 0 22px; font-size: 23px; }
+body.nolyrics #pill .sep { height: 28px; margin: 0 12px; }
+body.nolyrics #progress { margin-top: 62px; }
+body.nolyrics #progress .track { height: 13px; }
+body.nolyrics #progress .times { font-size: 24px; }
+
+/* ── inactivo ──────────────────────────────────────────────────────── */
+#idleCard { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
+#idleCard .big { font-size: 46px; letter-spacing: 18px; }
+#idleCard .sub { font-size: 24px; color: rgba(255,255,255,.55); }
+body.idle #idleCard { display: flex; }
+body.idle #coverWrap, body.idle #info, body.idle #lyrics, body.idle #top, body.idle #floor, body.idle #chip { display: none; }
+
+/* sin animaciones (equipos lentos / ahorro) */
+body.static #aurora, body.static #glow { animation: none; }

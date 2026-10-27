@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>OBSIDIAN</title>
+  <meta name="viewport" content="width=1920, height=1080">
+  <!-- SDK de receptor de Google (no se aloja localmente, ver documentación de Cast) -->
+  <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="receiver.css">
+</head>
+<body class="idle">
+  <!-- elemento de audio que usa el PlayerManager de CAF (la interfaz es propia) -->
+  <audio id="media" preload="auto"></audio>
+  <div id="stage">
+    <canvas id="aurora" width="240" height="135"></canvas>
+    <div id="floor"><div class="hair"></div></div>
+
+    <div id="coverWrap">
+      <canvas id="glow" width="64" height="64"></canvas>
+      <div id="contact"></div>
+      <div id="reflection"><div class="tilt"><img id="reflImg" alt=""></div></div>
+      <div id="cover" class="tilt">
+        <img id="coverImg" alt="">
+        <div id="initials"></div>
+        <div class="edge"></div>
+        <div id="dim"></div>
+      </div>
+      <div id="paused"><i></i><i></i><span>En pausa</span></div>
+    </div>
+
+    <div id="top"><span class="brand">OBSIDIAN</span><span id="album"></span></div>
+
+    <div id="info">
+      <div id="eyebrow">REPRODUCIENDO</div>
+      <div id="titleRow"><span id="title"></span><span id="explicit" title="Explícita">E</span></div>
+      <div id="artistRow"><span id="artist"></span><span id="pill"><b id="pillKind"></b><span class="sep"></span><span id="pillDetail"></span></span></div>
+      <div id="progress"><div class="track"><div id="bar"></div></div><div class="times"><span id="tPos">0:00</span><span id="tLeft">-0:00</span></div></div>
+    </div>
+
+    <div id="lyrics"><div id="lines"></div></div>
+
+    <div id="chip"><svg viewBox="0 0 24 24"><path d="M2 16a5 5 0 0 1 5 5M2 12a9 9 0 0 1 9 9M2 8.5V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg><span id="chipText">Transmitiendo desde OBSIDIAN</span></div>
+
+    <div id="idleCard"><div class="brand big">OBSIDIAN</div><div class="sub">Listo para reproducir</div></div>
+  </div>
+  <script src="receiver.js"></script>
+</body>
+</html>
