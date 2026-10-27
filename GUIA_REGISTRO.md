@@ -1,9 +1,9 @@
 # OBSIDIAN en el proyector — registrar tu receptor propio (diseño «Cine»)
 
-**Ya funciona sin hacer nada de esto.** Desde la v32, OBSIDIAN transmite al Chromecast integrado del Xgimi
-usando el *Default Media Receiver* de Google (App ID `CC1AD845`): suena la canción del canal y la TV muestra
-la pantalla genérica de Google (portada, título y artista). Esta guía sirve para que, en lugar de esa pantalla,
-se vea la de OBSIDIAN (carátula flotante, aurora, letra sincronizada, pastilla HI-RES/CD…).
+**Estado actual (v37): hecho.** El receptor OBSIDIAN está registrado con el App ID **`8BF01B6D`**, alojado en
+<https://nikomezkiritz8.github.io/obsidian-cast/>, y es el receptor por defecto de la app desde la v33.
+Si un dispositivo no puede abrirlo, la app usa automáticamente el *Default Media Receiver* de Google (`CC1AD845`).
+Esta guía queda como referencia (otro proyector, otra cuenta, o volver a registrar tras un restablecimiento de fábrica).
 
 Lo que tienes que hacer tú (yo no puedo crear cuentas ni pagar):
 
@@ -82,17 +82,11 @@ Si algún día restableces el proyector de fábrica, el número de serie de soft
 En `app/build.gradle.kts` (bloque `defaultConfig`), cambia **solo esta línea**:
 
 ```kotlin
-val castAppId = (project.findProperty("castAppId") as String?) ?: "CC1AD845"
+val castAppId = (project.findProperty("castAppId") as String?) ?: "8BF01B6D"
 ```
 
-por
-
-```kotlin
-val castAppId = (project.findProperty("castAppId") as String?) ?: "TU_APP_ID"
-```
-
-(o compila con `./gradlew assembleRelease -PcastAppId=TU_APP_ID`). También puedes pasarme el App ID y te preparo
-la versión siguiente. Con `CC1AD845` la app sigue usando la pantalla genérica de Google.
+(valor actual: `8BF01B6D`, el receptor OBSIDIAN). Para otro receptor, cambia ese valor o compila con
+`./gradlew assembleRelease -PcastAppId=OTRO_ID`. Con `CC1AD845` la app usaría la pantalla genérica de Google.
 
 ## Comprobación
 
@@ -102,6 +96,12 @@ la versión siguiente. Con `CC1AD845` la app sigue usando la pantalla genérica 
 3. Deberías ver la pantalla «Cine»: carátula flotante con reflejo, letra sincronizada a la derecha (o el diseño
    de carátula grande si la canción no tiene letra), pastilla HI-RES/CD y «Transmitiendo desde …».
 4. El móvil sigue siendo el mando (pausa, saltar, buscar); al desconectar, la reproducción vuelve al móvil en pausa.
+
+## Actualizar el receptor
+
+Sube `index.html`, `receiver.css` y `receiver.js` nuevos al mismo repositorio (sustituyendo los anteriores). La URL y
+el App ID no cambian. El proyector puede tener la versión anterior en caché: cierra la transmisión y vuelve a empezar
+(si persiste, reinicia el proyector).
 
 ## Si no funciona
 

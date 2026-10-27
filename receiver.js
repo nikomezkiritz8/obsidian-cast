@@ -7,7 +7,10 @@
   const body = document.body;
   const NEUTRAL = { sky: [128, 146, 232], amber: [236, 164, 84], dusk: [150, 128, 196] };
 
-  const st = { key: null, dur: 0, pos: 0, playing: false, lyrics: null, lyricsKey: null, idx: -2, tops: [], heights: [], covers: {}, lyricsByKey: {}, coverUrl: null };
+  const st = { key: null, dur: 0, pos: 0, playing: false, lyrics: null, lyricsKey: null, idx: -2, tops: [], heights: [], covers: {}, lyricsByKey: {}, coverUrl: null,
+    meta: null, shownKey: null, shownSrc: null, timers: [], chunks: {} };
+  // Portada: sin señal en WAIT_MS → marco vacío con brillo; iniciales solo si el móvil confirma "sin portada" (o tras SAFETY_MS sin nada)
+  const WAIT_MS = 3500, SAFETY_MS = 20000;
 
   function mmss(s) { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
   function initials(t) { return (t || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join(''); }
@@ -72,41 +75,89 @@
     $('pillKind').textContent = lab ? lab.kind : ''; $('pillDetail').textContent = lab ? lab.detail : '';
     $('pill').querySelector('.sep').style.display = lab && lab.detail ? '' : 'none';
     $('initials').textContent = initials(t.title);
+    st.meta = { key: t.key, cover: t.cover || null };
     if (changed) {
       setLyrics(st.lyricsByKey[t.key] || null);
-      loadCover(pickCover(t));
+      refreshCover();
+    } else if (st.shownKey !== t.key) refreshCover();
+  }
+  // ── portada ────────────────────────────────────────────────────────────────────────────
+  // Fuente conocida para una pista: string (url/data) · null = el móvil confirma que no hay portada · undefined = aún no se sabe
+  function coverSrc(key) {
+    const c = st.covers[key];
+    if (c) return c.none ? null : (c.data || c.url || null);
+    const u = st.meta && st.meta.key === key ? st.meta.cover : null;
+    if (u && !(location.protocol === 'https:' && u.startsWith('http:'))) return u;  // contenido mixto: se espera la del móvil
+    return undefined;
+  }
+  // Descarga + decodificación fuera de pantalla (una vez por imagen); CORS para la paleta, si no se puede, sin ella.
+  const decoded = new Map();
+  function preload(src) {
+    if (decoded.has(src)) return decoded.get(src);
+    const p = new Promise((resolve, reject) => {
+      const attempt = (cors) => {
+        const img = new Image(); if (cors) img.crossOrigin = 'anonymous'; img.decoding = 'async';
+        img.onload = () => { let ok = false; const done = () => { if (!ok) { ok = true; resolve({ img, cors }); } };
+          if (img.decode) { img.decode().then(done, done); setTimeout(done, 1200); } else done(); };
+        img.onerror = () => cors ? attempt(false) : reject(new Error('cover'));
+        img.src = src;
+      };
+      attempt(!src.startsWith('data:'));
+    });
+    p.catch(() => decoded.delete(src));
+    decoded.set(src, p);
+    if (decoded.size > 12) decoded.delete(decoded.keys().next().value);
+    return p;
+  }
+  function clearTimers() { st.timers.forEach(clearTimeout); st.timers = []; }
+  function setWaiting(on) { body.classList.toggle('coverwait', on); if (on) body.classList.remove('noimg'); else body.classList.remove('coverempty'); }
+  function showInitials() {
+    clearTimers(); setWaiting(false);
+    $('coverImg').classList.remove('ok'); $('reflImg').classList.remove('ok'); $('coverNext').classList.remove('ok');
+    body.classList.add('noimg'); st.shownKey = st.key; st.shownSrc = null; st.pal = NEUTRAL;
+    paintGlow(null); paintAurora(NEUTRAL, body.classList.contains('nolyrics'));
+  }
+  function showCover(src, r) {
+    clearTimers(); setWaiting(false); body.classList.remove('noimg');
+    const ci = $('coverImg'), ri = $('reflImg'), nx = $('coverNext');
+    st.shownKey = st.key; st.shownSrc = src;
+    st.pal = r.cors ? palette(r.img) : NEUTRAL; paintAurora(st.pal, body.classList.contains('nolyrics')); paintGlow(r.img);
+    if (!ci.classList.contains('ok') || body.classList.contains('instant')) { ci.src = src; ri.src = src; ci.classList.add('ok'); ri.classList.add('ok'); return; }
+    // fundido: la nueva encima, ya decodificada; al terminar pasa a ser la de abajo
+    nx.classList.remove('snap'); nx.src = src; void nx.offsetWidth; nx.classList.add('ok'); ri.src = src;
+    setTimeout(() => { if (st.shownSrc !== src) return; ci.src = src; nx.classList.add('snap'); nx.classList.remove('ok'); }, 560);
+  }
+  // Decide qué mostrar para la pista actual. Nunca pinta iniciales mientras la portada puede estar en camino.
+  function refreshCover() {
+    const key = st.key; if (!key) return;
+    const src = coverSrc(key);
+    if (src === null) return showInitials();
+    if (src && st.shownKey === key && st.shownSrc === src) return;
+    if (src) {
+      st.coverUrl = src;
+      if (st.shownKey !== key) setWaiting(true);
+      preload(src).then((r) => { if (st.key === key && st.coverUrl === src) showCover(src, r); },
+        () => { if (st.key !== key || st.coverUrl !== src) return;
+          const c = st.covers[key]; if (c && c.url === src && c.data) return;
+          if (c && c.url === src) { delete st.covers[key]; } else if (st.meta) st.meta.cover = null;
+          if (coverSrc(key) === undefined) wait(key); else refreshCover(); });
+      return;
     }
+    wait(key);
   }
-  function pickCover(t) {
-    const inline = st.covers[t.key];
-    if (inline) return inline;
-    const u = t.cover;
-    if (!u) return null;
-    if (location.protocol === 'https:' && u.startsWith('http:')) return null;  // contenido mixto: se espera la portada en línea del móvil
-    return u;
+  function wait(key) {
+    if (st.shownKey === key && st.shownSrc) return;
+    setWaiting(true); clearTimers();
+    st.timers.push(setTimeout(() => { if (st.key === key && st.shownKey !== key) body.classList.add('coverempty'); }, WAIT_MS));
+    st.timers.push(setTimeout(() => { if (st.key === key && st.shownKey !== key) showInitials(); }, SAFETY_MS));
   }
-  function loadCover(url) {
-    st.coverUrl = url;
-    const ci = $('coverImg'), ri = $('reflImg');
-    ci.classList.remove('ok'); ri.classList.remove('ok');
-    if (!url) { body.classList.add('noimg'); paintGlow(null); paintAurora(NEUTRAL, body.classList.contains('nolyrics')); return; }
-    const attempt = (cors) => {
-      const img = new Image(); if (cors) img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        if (st.coverUrl !== url) return;
-        body.classList.remove('noimg'); ci.src = url; ri.src = url; ci.classList.add('ok'); ri.classList.add('ok');
-        st.pal = cors ? palette(img) : NEUTRAL; paintAurora(st.pal, body.classList.contains('nolyrics')); paintGlow(img);
-      };
-      img.onerror = () => {
-        if (st.coverUrl !== url) return;
-        if (cors) return attempt(false);  // servidor sin CORS: la portada se muestra igual, con paleta neutra
-        body.classList.add('noimg'); paintGlow(null); paintAurora(NEUTRAL, body.classList.contains('nolyrics'));
-      };
-      img.src = url;
-    };
-    attempt(!url.startsWith('data:'));
+  function onCover(m) {
+    if (!m.key) return;
+    st.covers[m.key] = m.none ? { none: true } : { url: m.url || null, data: m.data || null };
+    const src = coverSrc(m.key);
+    if (m.key === st.key) refreshCover(); else if (src) preload(src).catch(() => {});  // siguiente pista: lista al cambiar
   }
-  function setInlineCover(key, data) { st.covers[key] = data; if (key === st.key && st.coverUrl !== data) loadCover(data); }
+  function setInlineCover(key, data) { onCover({ key, data }); }
 
   // ── letra ──────────────────────────────────────────────────────────────────────────────
   function setLyrics(lines) {
@@ -159,10 +210,15 @@
     if (!m || typeof m !== 'object') return;
     if (m.type === 'hello') setSender(m.device);
     else if (m.type === 'lyrics') { const L = (m.synced || []).filter((x) => Array.isArray(x)); st.lyricsByKey[m.key] = L; if (m.key === st.key) setLyrics(L); }
-    else if (m.type === 'cover') setInlineCover(m.key, m.data);
+    else if (m.type === 'cover') onCover(m);
+    else if (m.type === 'chunk') {   // mensajes grandes (portada en línea) llegan troceados
+      const c = st.chunks[m.id] || (st.chunks[m.id] = { n: m.n, parts: [], got: 0 });
+      if (c.parts[m.i] === undefined) { c.parts[m.i] = m.part; c.got++; }
+      if (c.got === c.n) { delete st.chunks[m.id]; try { onMessage(JSON.parse(c.parts.join(''))); } catch (e) {} }
+    }
   }
 
-  window.ObsidianUI = { setTrack, setPlayback, setLyrics, setSender, setIdle, onMessage, NS };
+  window.ObsidianUI = { setTrack, setPlayback, setLyrics, setSender, setIdle, onMessage, NS, _st: st };
 
   // ── CAF (solo en un dispositivo Cast real) ─────────────────────────────────────────────
   if (!(window.cast && cast.framework && cast.framework.CastReceiverContext)) return;
@@ -185,7 +241,7 @@
   pm.addEventListener(cast.framework.events.EventType.PLAYER_LOAD_COMPLETE, () => {
     const t = fromMedia(pm.getMediaInformation()); if (!t) return;
     setTrack(t);
-    if (!st.lyricsByKey[t.key]) ctx.sendCustomMessage(NS, undefined, { type: 'need', key: t.key });
+    if (!st.lyricsByKey[t.key] || !st.covers[t.key]) ctx.sendCustomMessage(NS, undefined, { type: 'need', key: t.key });
   });
   pm.addEventListener(cast.framework.events.EventType.MEDIA_FINISHED, () => {});
   // 4 veces por segundo: progreso (transform) y línea de la letra; nada se repinta si no cambia

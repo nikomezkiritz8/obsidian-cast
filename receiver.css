@@ -27,6 +27,17 @@ body.paused #aurora { opacity: .7; animation-play-state: paused; }
   box-shadow: 0 26px 60px rgba(0,0,0,.72); }
 #coverImg, #reflImg { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .5s; }
 #coverImg.ok, #reflImg.ok { opacity: 1; }
+#coverNext { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .55s; }
+#coverNext.ok { opacity: 1; }
+#coverNext.snap { transition: none; }
+/* portada en camino: la anterior sigue (o el marco vacío) con un brillo lento; nunca iniciales mientras tanto */
+#shimmer { position: absolute; inset: 0; opacity: 0; transition: opacity .4s; pointer-events: none; overflow: hidden; }
+#shimmer::before { content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 60%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.07), transparent); animation: sweep 2.2s ease-in-out infinite; }
+@keyframes sweep { from { transform: translateX(0); } to { transform: translateX(270%); } }
+body.coverwait #shimmer { opacity: 1; }
+body.coverempty #coverImg, body.coverempty #reflImg, body.coverempty #coverNext { opacity: 0; }
+body.static #shimmer::before, body.paused #shimmer::before { animation: none; }
 #initials { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
   font-family: 'Roboto Serif', Georgia, serif; font-size: calc(var(--s) * .26); color: rgba(255,255,255,.55); }
 body.noimg #initials { display: flex; }
@@ -60,9 +71,10 @@ body.paused #paused { opacity: 1; transform: scale(1); }
 /* ── textos ────────────────────────────────────────────────────────── */
 #top { position: absolute; left: 70px; top: 50px; right: 70px; height: 26px; }
 .brand { color: rgba(232,196,110,.8); font-size: 20px; font-weight: 600; letter-spacing: 7px; }
-#album { position: absolute; left: 330px; width: 0; display: flex; justify-content: center; white-space: nowrap; top: 0;
+/* centrado sobre la carátula pero sin pisar la marca: caja limitada con puntos suspensivos (títulos largos) */
+#album { position: absolute; left: 200px; width: 365px; display: flex; justify-content: center; white-space: nowrap; top: 0; overflow: hidden;
   font-size: 20px; font-weight: 600; letter-spacing: 6px; color: rgba(255,255,255,.78); text-transform: uppercase; }
-#album::before { content: attr(data-t); }
+#album::before { content: attr(data-t); overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
 #info { position: absolute; left: 165px; top: 780px; width: 470px; }
 #eyebrow { display: none; }
@@ -116,7 +128,7 @@ body.nolyrics #lyrics { display: none; }
 body.nolyrics #coverWrap { left: 170px; top: 170px; width: 600px; height: 600px; --s: 600px; --hz: 650px; }
 body.nolyrics #floor { top: 820px; }
 body.nolyrics #floor .hair { width: 1800px; }
-body.nolyrics #album { left: 890px; }
+body.nolyrics #album { left: 290px; width: 1200px; }
 body.nolyrics #info { left: 900px; top: 278px; width: 890px; }
 body.nolyrics #eyebrow { display: block; font-size: 20px; font-weight: 650; letter-spacing: 6px; color: rgba(232,196,110,.9); height: 44px; }
 body.nolyrics #titleRow { height: 120px; gap: 22px; }
