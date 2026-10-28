@@ -9,6 +9,31 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--
 #media { display: none; }
 #stage { position: absolute; inset: 0; overflow: hidden; }
 
+/* ── fondo: carátula actual desenfocada (v40) ─────────────────────────
+   Se pre-desenfoca UNA vez por portada en un lienzo de 192×108 (≈1/10) y el navegador lo escala: sin filter:blur en vivo
+   sobre una imagen grande (la GPU del Chromecast/Google TV es floja). Dos lienzos → fundido solo con opacity. */
+#bg { position: absolute; inset: -4%; transform: scale(1.06); animation: bgdrift 40s ease-in-out infinite alternate; will-change: transform; }
+@keyframes bgdrift { from { transform: scale(1.06) translate3d(-14px, 6px, 0) } to { transform: scale(1.10) translate3d(14px, -8px, 0) } }
+.bgl { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1.4s ease; }
+.bgl.on { opacity: 1; }
+/* V1 · velo uniforme 60 % + viñeta suave */
+#veil { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 50% 45%, rgba(0,0,0,0) 40%, rgba(0,0,0,.45) 100%), rgba(6,5,9,.60); transition: opacity .6s; }
+/* V2 · fondo más vivo, velo ligero, sombra fuerte detrás de la letra y de los datos (abajo-izquierda) */
+body.bgv2 #veil { background:
+  linear-gradient(90deg, rgba(0,0,0,0) 38%, rgba(4,3,7,.62) 58%, rgba(4,3,7,.74) 100%),
+  radial-gradient(ellipse 34% 40% at 21% 86%, rgba(4,3,7,.78), rgba(4,3,7,0) 100%),
+  radial-gradient(ellipse 80% 75% at 40% 45%, rgba(0,0,0,0) 45%, rgba(0,0,0,.42) 100%), rgba(6,5,9,.36); }
+body.paused #bg { opacity: .7; animation-play-state: paused; }
+#bg { transition: opacity .8s; }
+/* sin portada: oscuro neutro (sin morado), apenas un calor dorado junto a la carátula */
+body.nobg #bg { opacity: 0; }
+body.nobg #stage { background: radial-gradient(ellipse 55% 60% at 22% 40%, rgba(232,196,110,.07), rgba(0,0,0,0) 70%),
+  radial-gradient(ellipse 90% 90% at 50% 50%, #121016, #050407); }
+body.nobg #veil { opacity: 0; }
+/* la aurora de colores ya no se usa con fondo de portada */
+#aurora { display: none; }
+
 /* aurora: pintada una vez por canción en un lienzo pequeño (suave al escalar); deriva lenta solo con transform */
 #aurora { position: absolute; left: -60px; top: -40px; width: 2040px; height: 1160px; opacity: 1; transition: opacity 1.2s;
   animation: drift 26s ease-in-out infinite alternate; will-change: transform; }
@@ -16,7 +41,7 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--
 body.paused #aurora { opacity: .7; animation-play-state: paused; }
 
 #floor { position: absolute; left: 0; right: 0; top: 700px; bottom: 0;
-  background: linear-gradient(to bottom, rgba(8,7,11,0) 0, rgba(8,7,11,.85) 90px, rgba(8,7,11,.85) 100%); }
+  background: linear-gradient(to bottom, rgba(8,7,11,0) 0, rgba(8,7,11,.55) 90px, rgba(8,7,11,.7) 100%); }
 #floor .hair { position: absolute; left: 60px; width: 800px; top: 0; height: 1.4px;
   background: linear-gradient(90deg, rgba(232,196,110,0), rgba(232,196,110,.6) 50%, rgba(232,196,110,0)); }
 
@@ -150,4 +175,4 @@ body.idle #idleCard { display: flex; }
 body.idle #coverWrap, body.idle #info, body.idle #lyrics, body.idle #top, body.idle #floor, body.idle #chip { display: none; }
 
 /* sin animaciones (equipos lentos / ahorro) */
-body.static #aurora, body.static #glow { animation: none; }
+body.static #aurora, body.static #glow, body.static #bg { animation: none; }

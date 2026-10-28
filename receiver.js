@@ -53,6 +53,29 @@
       g.fillStyle = gr; g.fillRect(-r, -r, 2 * r, 2 * r); g.restore();
     }
   }
+  // ── fondo: carátula desenfocada, calculada una vez por portada (v40) ─────────────────────
+  // Reducción en pasos (32×18 → 192×108, ya es un desenfoque) + filter de canvas si existe. Funciona también sin CORS
+  // (drawImage no necesita leer píxeles). Dos lienzos: se pinta el oculto y se cruza con opacity.
+  const BG_V2 = !/[?&]bg=v1/.test(location.search);
+  if (BG_V2) body.classList.add('bgv2');
+  let bgFront = null, bgSrc = null;
+  function cropCover(img) { const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height; const s = Math.min(w, h * 16 / 9);
+    return [(w - s) / 2, (h - s * 9 / 16) / 2, s, s * 9 / 16]; }
+  function paintBg(img, src) {
+    if (!img) { body.classList.add('nobg'); bgSrc = null; return; }
+    if (src && src === bgSrc) return;
+    bgSrc = src; body.classList.remove('nobg');
+    const next = bgFront === $('bgA') ? $('bgB') : $('bgA');
+    const t = document.createElement('canvas'); t.width = 32; t.height = 18;
+    const tg = t.getContext('2d'); tg.imageSmoothingEnabled = true; tg.imageSmoothingQuality = 'high';
+    const [sx, sy, sw, sh] = cropCover(img); tg.drawImage(img, sx, sy, sw, sh, 0, 0, 32, 18);
+    const g = next.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.clearRect(0, 0, next.width, next.height);
+    try { g.filter = BG_V2 ? 'blur(5px) saturate(1.55) brightness(1.08)' : 'blur(5px) saturate(1.15) brightness(.95)'; } catch (e) {}
+    g.drawImage(t, -12, -8, next.width + 24, next.height + 16); g.filter = 'none';
+    next.classList.add('on'); if (bgFront && bgFront !== next) bgFront.classList.remove('on');
+    bgFront = next;
+  }
   function paintGlow(img) {
     const cv = $('glow'), g = cv.getContext('2d'); g.clearRect(0, 0, 64, 64);
     if (!img) return;
@@ -97,7 +120,7 @@
     const p = new Promise((resolve, reject) => {
       const attempt = (cors) => {
         const img = new Image(); if (cors) img.crossOrigin = 'anonymous'; img.decoding = 'async';
-        img.onload = () => { let ok = false; const done = () => { if (!ok) { ok = true; resolve({ img, cors }); } };
+        img.onload = () => { let ok = false; const done = () => { if (!ok) { ok = true; resolve({ img, cors: cors || src.startsWith('data:') }); } };
           if (img.decode) { img.decode().then(done, done); setTimeout(done, 1200); } else done(); };
         img.onerror = () => cors ? attempt(false) : reject(new Error('cover'));
         img.src = src;
@@ -115,13 +138,13 @@
     clearTimers(); setWaiting(false);
     $('coverImg').classList.remove('ok'); $('reflImg').classList.remove('ok'); $('coverNext').classList.remove('ok');
     body.classList.add('noimg'); st.shownKey = st.key; st.shownSrc = null; st.pal = NEUTRAL;
-    paintGlow(null); paintAurora(NEUTRAL, body.classList.contains('nolyrics'));
+    paintGlow(null); paintBg(null);
   }
   function showCover(src, r) {
     clearTimers(); setWaiting(false); body.classList.remove('noimg');
     const ci = $('coverImg'), ri = $('reflImg'), nx = $('coverNext');
     st.shownKey = st.key; st.shownSrc = src;
-    st.pal = r.cors ? palette(r.img) : NEUTRAL; paintAurora(st.pal, body.classList.contains('nolyrics')); paintGlow(r.img);
+    paintBg(r.img, src); paintGlow(r.img);
     if (!ci.classList.contains('ok') || body.classList.contains('instant')) { ci.src = src; ri.src = src; ci.classList.add('ok'); ri.classList.add('ok'); return; }
     // fundido: la nueva encima, ya decodificada; al terminar pasa a ser la de abajo
     nx.classList.remove('snap'); nx.src = src; void nx.offsetWidth; nx.classList.add('ok'); ri.src = src;
@@ -165,7 +188,6 @@
     const has = Array.isArray(lines) && lines.length > 1;
     const wasNo = body.classList.contains('nolyrics');
     body.classList.toggle('nolyrics', !has);
-    if (wasNo === has && st.pal) paintAurora(st.pal, !has);
     const box = $('lines'); box.innerHTML = ''; st.lyrics = has ? lines : null; st.idx = -2; st.tops = []; st.heights = [];
     if (!has) return;
     const frag = document.createDocumentFragment();
